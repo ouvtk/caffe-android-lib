@@ -1,16 +1,28 @@
-Caffe-Android-Lib
+Caffe-Android-Lib 
 ===============
+(forked from sh1r0 https://github.com/sh1r0/caffe-android-lib)
 ## Goal
 Porting [caffe](https://github.com/BVLC/caffe) to android platform
 
 ## Build
+has few problems on Windows
 ```
-git clone --recursive https://github.com/sh1r0/caffe-android-lib.git
+git clone --recursive https://github.com/ouvtk/caffe-android-lib.git
 cd caffe-android-lib
 ./build.py $(NDK_PATH)
 ```
 
 ## Usage
+- in case you want to use it for your package change JNI functions names 
+  (ex. change package from com.sh1r0.caffe-android-demo to com.example.caffe)
+	```
+	./caffe-mobile/jni/caffe_jni.cpp 
+	
+	Replace middle part from
+	Java_com_sh1r0_caffe_1android_1demo_CaffeMobile_loadModel to
+	Java_com_example_caffe_CaffeMobile_loadModel
+	```
+
 - put required stuff into your device
 
 	```
@@ -18,7 +30,7 @@ cd caffe-android-lib
 	adb shell mkdir -p /sdcard/caffe_mobile/
 	adb push caffe-mobile/jni/caffe/models/bvlc_reference_caffenet/ /sdcard/caffe_mobile/bvlc_reference_caffenet/
 	```
-- copy `caffe-mobile/libs/armeabi-v7a/*.so` to your jni lib directory
+- copy `caffe-mobile/libs/armeabi-v7a/*.so` to your jni lib directory (ex. for recent gradle build is src/main/jniLibs/armeabi-v7a)
 - in your main activity
 
 	```java
