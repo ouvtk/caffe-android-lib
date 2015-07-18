@@ -52,13 +52,14 @@ def setup():
 
 def setup_ndk_build(jobs=1):
     def ndk_build():
-        call(['ndk-build', '-j', str(jobs)])
+        call(['ndk-build.cmd', '-j', str(jobs)]) # windows
+        # call(['ndk-build', '-j', str(jobs)]) # *nix
 
     return ndk_build
 
 
 def build_protobuf(ndk_build):
-    p_dir = os.getcwdu()
+    p_dir = os.getcwd()
     os.chdir('protobuf')
     os.environ['NDK_PROJECT_PATH'] = os.getcwd()
     ndk_build()
@@ -66,7 +67,7 @@ def build_protobuf(ndk_build):
 
 
 def build_caffe(ndk_build, project_lib=None):
-    p_dir = os.getcwdu()
+    p_dir = os.getcwd()
     os.chdir('caffe-mobile')
     os.environ['NDK_PROJECT_PATH'] = os.getcwd()
     ndk_build()

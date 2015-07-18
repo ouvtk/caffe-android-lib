@@ -1,6 +1,7 @@
 #include <string.h>
 #include <jni.h>
 #include <android/log.h>
+#include <android/bitmap.h>
 #include <string>
 
 #include "caffe/caffe.hpp"
@@ -16,6 +17,14 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+using caffe::Blob;
+using caffe::Caffe;
+using caffe::Datum;
+using caffe::Net;
+using caffe::shared_ptr;
+using caffe::vector;
+using caffe::MemoryDataLayer;
 
 caffe::CaffeMobile *caffe_mobile;
 
@@ -53,14 +62,14 @@ static int start_logger() {
 }
 
 void JNIEXPORT JNICALL
-Java_com_sh1r0_caffe_1android_1demo_CaffeMobile_enableLog(JNIEnv* env, jobject thiz, jboolean enabled)
+Java_ru_ouvtk_deepdreamapp_CaffeMobile_enableLog(JNIEnv* env, jobject thiz, jboolean enabled)
 {
     start_logger();
     caffe::LogMessage::Enable(enabled != JNI_FALSE);
 }
 
 jint JNIEXPORT JNICALL
-Java_com_sh1r0_caffe_1android_1demo_CaffeMobile_loadModel(JNIEnv* env, jobject thiz, jstring modelPath, jstring weightsPath)
+Java_ru_ouvtk_deepdreamapp_CaffeMobile_loadModel(JNIEnv* env, jobject thiz, jstring modelPath, jstring weightsPath)
 {
     const char *model_path = env->GetStringUTFChars(modelPath, 0);
     const char *weights_path = env->GetStringUTFChars(weightsPath, 0);
@@ -71,7 +80,7 @@ Java_com_sh1r0_caffe_1android_1demo_CaffeMobile_loadModel(JNIEnv* env, jobject t
 }
 
 jint JNIEXPORT JNICALL
-Java_com_sh1r0_caffe_1android_1demo_CaffeMobile_predictImage(JNIEnv* env, jobject thiz, jstring imgPath)
+Java_ru_ouvtk_deepdreamapp_CaffeMobile_predictImage(JNIEnv* env, jobject thiz, jstring imgPath)
 {
     const char *img_path = env->GetStringUTFChars(imgPath, 0);
     caffe::vector<int> top_k = caffe_mobile->predict_top_k(string(img_path), 3);
@@ -80,6 +89,47 @@ Java_com_sh1r0_caffe_1android_1demo_CaffeMobile_predictImage(JNIEnv* env, jobjec
     env->ReleaseStringUTFChars(imgPath, img_path);
 
     return top_k[0];
+}
+
+/**
+ * Code is partially from https://github.com/ruckus/android-image-filter-ndk
+ */
+
+void JNIEXPORT JNICALL
+Java_ru_ouvtk_deepdreamapp_CaffeMobile_dreamImage(JNIEnv* env, jobject thiz, jstring imgPath, jobject outBitmap)
+{
+	AndroidBitmapInfo info;
+    int ret;
+    void* pixels;
+
+    const char *img_path = env->GetStringUTFChars(imgPath, 0);
+	
+    const vector<Blob<float>*>& resImage = caffe_mobile->deepDream(string(img_path));
+	
+	if ((ret = AndroidBitmap_getInfo(env, outBitmap, &info)) < 0) {
+            LOGE("AndroidBitmap_getInfo() failed ! error=%d", ret);
+            return;
+        }
+    if (info.format != ANDROID_BITMAP_FORMAT_RGBA_8888) {
+        LOGE("Bitmap format is not RGBA_8888 !");
+        return;
+    }
+
+    if ((ret = AndroidBitmap_lockPixels(env, outBitmap, &pixels)) < 0) {
+        LOGE("AndroidBitmap_lockPixels() failed ! error=%d", ret);
+    }
+	
+    LOG(DEBUG) << "putImage will start soon ";
+
+	caffe_mobile->putImage(&info, pixels, resImage);
+
+	LOG(DEBUG) << "putImage ended ";
+
+    AndroidBitmap_unlockPixels(env, outBitmap);
+
+    env->ReleaseStringUTFChars(imgPath, img_path);
+
+    return;
 }
 
 int getTimeSec() {

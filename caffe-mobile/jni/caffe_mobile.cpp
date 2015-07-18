@@ -98,4 +98,75 @@ vector<int> CaffeMobile::predict_top_k(string img_path, int k) {
 	return vector<int>(sorted_index.begin(), sorted_index.begin() + k);
 }
 
+const vector<Blob<float>*>& CaffeMobile::deepDream(string img_path) {
+	CHECK(caffe_net != NULL);
+
+	Datum datum;
+	CHECK(ReadImageToDatum(img_path, 0, 256, 256, true, &datum));
+	const shared_ptr<MemoryDataLayer<float>> memory_data_layer =
+		static_pointer_cast<MemoryDataLayer<float>>(
+			caffe_net->layer_by_name("data"));
+	memory_data_layer->AddDatumVector(vector<Datum>({datum}));
+	
+	float loss;
+	vector<Blob<float>* > dummy_bottom_vec;
+	clock_t t_start = clock();
+	const vector<Blob<float>*>& result = caffe_net->Forward(dummy_bottom_vec, &loss);
+	clock_t t_end = clock();
+	LOG(DEBUG) << "Prediction time: " << 1000.0 * (t_end - t_start) / CLOCKS_PER_SEC << " ms.";
+	
+	return result;
+}	
+
+float clip(float n, float lower, float upper) {
+  return std::max(lower, std::min(n, upper));
+}
+
+void CaffeMobile::putImage(AndroidBitmapInfo* info, void* pixels, const vector<Blob<float>*>& resImage) {
+	Blob<float> * srcBlob = *resImage.data();
+
+	LOG(DEBUG) << "srcBlob received";
+
+	vector<int> shape = {1, 3, (int) info->width, (int) info->height };
+
+	LOG(DEBUG) << "shape configured";
+
+	Blob<float>* imgBlob;
+	imgBlob->CopyFrom(*srcBlob, true, false);
+	LOG(DEBUG) << "imgBlob copied";
+
+	imgBlob->Reshape(shape);
+	LOG(DEBUG) << "imgBlob reshaped";
+
+	int size = imgBlob->count();
+	LOG(DEBUG) << "imgBlob size is: " << size;
+
+	/*Partially from https://github.com/ruckus/android-image-filter-ndk*/
+
+	uint32_t* pixelRow;
+	int ix, iy, red, green, blue;
+
+	for(iy = 0; iy < (int) info->height; iy++){
+
+		pixelRow = (uint32_t*) pixels;
+
+		for(ix =0; ix < (int) info->width; ix++){
+			red = (int) clip(imgBlob->data_at(0,0,iy,ix), 0, 255);
+			green = (int) clip(imgBlob->data_at(0,1,iy,ix), 0, 255);
+			blue = (int) clip(imgBlob->data_at(0,2,iy,ix), 0, 255);
+
+			pixelRow[ix] =
+					((red << 16) & 0x00FF0000) |
+					((green << 8) & 0x0000FF00) |
+					(blue & 0x000000FF);
+		}
+
+		pixels = (char*)pixels + info->stride;
+	}
+
+	LOG(DEBUG) << "before return putImage " << size;
+
+	return;
+}
+
 } // namespace caffe

@@ -87,7 +87,7 @@ LOCAL_C_INCLUDES := $(LOCAL_PATH)/../../eigen3 \
 LOCAL_STATIC_LIBRARIES += protobuf
 LOCAL_CPPFLAGS += -pthread -fPIC -fexceptions -frtti -std=c++11 -DUSE_EIGEN -DCPU_ONLY
 
-LOCAL_LDLIBS += -lm -llog
+LOCAL_LDLIBS += -lm -llog -ljnigraphics
 
 LOCAL_ARM_MODE := arm
 ifeq ($(TARGET_ARCH_ABI), armeabi-v7a)
@@ -106,7 +106,7 @@ LOCAL_C_INCLUDES := $(LOCAL_PATH)/../../eigen3 $(LOCAL_PATH)/caffe/include \
 
 # LOCAL_STATIC_LIBRARIES += caffe
 LOCAL_SHARED_LIBRARIES := caffe
-LOCAL_LDLIBS := -lm -llog
+LOCAL_LDLIBS := -lm -llog -ljnigraphics
 LOCAL_CPPFLAGS += -fexceptions -frtti -std=c++11 -DUSE_EIGEN -DCPU_ONLY
 
 LOCAL_ARM_MODE  := arm
