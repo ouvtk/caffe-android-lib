@@ -42,12 +42,13 @@ cd caffe-android-lib
 - create `CaffeMobile.java`
 
 	```java
-	package com.sh1r0.caffe_android_demo;
+	package ru.ouvtk.deepdreamapp;
 
 	public class CaffeMobile {
 		public native void enableLog(boolean enabled);
 		public native int loadModel(String modelPath, String weightsPath);
 		public native int predictImage(String imgPath);
+		public native void dreamImage(String modelPath, Bitmap outBmp);
 	}
 	```
 - call native methods
@@ -58,6 +59,8 @@ cd caffe-android-lib
 	caffeMobile.loadModel(modelPath, weightsPath);  // init once
 	...
 	caffeMobile.predictImage(imgPath);
+	//or
+	caffeMobile.dreamImage(imgPath, bmp);
 	```
 
 ## Optional
