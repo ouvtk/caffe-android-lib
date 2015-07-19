@@ -98,7 +98,7 @@ vector<int> CaffeMobile::predict_top_k(string img_path, int k) {
 	return vector<int>(sorted_index.begin(), sorted_index.begin() + k);
 }
 
-const vector<Blob<float>*>& CaffeMobile::deepDream(string img_path) {
+const vector<Blob<float>*> CaffeMobile::deepDream(string img_path) {
 	CHECK(caffe_net != NULL);
 
 	Datum datum;
@@ -111,10 +111,21 @@ const vector<Blob<float>*>& CaffeMobile::deepDream(string img_path) {
 	float loss;
 	vector<Blob<float>* > dummy_bottom_vec;
 	clock_t t_start = clock();
-	const vector<Blob<float>*>& result = caffe_net->Forward(dummy_bottom_vec, &loss);
+	const vector<Blob<float>*>& forwardResult = caffe_net->Forward(dummy_bottom_vec, &loss);
 	clock_t t_end = clock();
-	LOG(DEBUG) << "Prediction time: " << 1000.0 * (t_end - t_start) / CLOCKS_PER_SEC << " ms.";
-	
+	LOG(DEBUG) << "Forward time: " << 1000.0 * (t_end - t_start) / CLOCKS_PER_SEC << " ms.";
+
+	t_start = clock();
+	caffe_net->Backward();
+	t_end = clock();
+	LOG(DEBUG) << "Backward time: " << 1000.0 * (t_end - t_start) / CLOCKS_PER_SEC << " ms.";
+
+	vector<Blob<float>*> result;
+
+	Blob<float>* dataResult = caffe_net->blob_by_name("data").get();
+
+	result.push_back(dataResult);
+
 	return result;
 }	
 
@@ -131,12 +142,14 @@ void CaffeMobile::putImage(AndroidBitmapInfo* info, void* pixels, const vector<B
 
 	LOG(DEBUG) << "shape configured";
 
-	Blob<float>* imgBlob;
-	imgBlob->CopyFrom(*srcBlob, true, false);
-	LOG(DEBUG) << "imgBlob copied";
+	Blob<float>* imgBlob = new Blob<float>();
+	LOG(DEBUG) << "Blob created";
 
 	imgBlob->Reshape(shape);
 	LOG(DEBUG) << "imgBlob reshaped";
+
+	imgBlob->CopyFrom(*srcBlob, false, true);
+	LOG(DEBUG) << "imgBlob copied";
 
 	int size = imgBlob->count();
 	LOG(DEBUG) << "imgBlob size is: " << size;

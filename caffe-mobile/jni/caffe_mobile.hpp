@@ -21,7 +21,7 @@ public:
 
 	vector<int> predict_top_k(string img_path, int k=3);
 
-	const vector<Blob<float>*>& deepDream(string img_path);
+	const vector<Blob<float>*> deepDream(string img_path);
 
 	void putImage(AndroidBitmapInfo* info, void* pixels, const vector<Blob<float>*>& resImage);
 
